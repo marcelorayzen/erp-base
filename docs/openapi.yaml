@@ -1,0 +1,179 @@
+openapi: 3.1.0
+info:
+  title: ERPsb API
+  version: 1.0.0
+servers:
+  - url: http://127.0.0.1:3000
+paths:
+  /api/v1/health:
+    get:
+      summary: Healthcheck
+      responses:
+        '200':
+          description: OK
+  /api/v1/dashboard/summary:
+    get:
+      summary: Resumo semáforo do dashboard
+      security:
+        - tenantAuth: []
+      responses:
+        '200':
+          description: Resumo retornado
+  /api/v1/cadastros/customers:
+    get:
+      summary: Lista clientes
+      security:
+        - tenantAuth: []
+      responses:
+        '200':
+          description: Lista de clientes
+    post:
+      summary: Cria cliente
+      security:
+        - tenantAuth: []
+      responses:
+        '201':
+          description: Cliente criado
+  /api/v1/finance/transactions:
+    get:
+      summary: Lista transações financeiras
+      security:
+        - tenantAuth: []
+      responses:
+        '200':
+          description: Lista de transações
+    post:
+      summary: Cria transação financeira
+      security:
+        - tenantAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionCreate'
+      responses:
+        '201':
+          description: Criado
+  /api/v1/sales/orders:
+    get:
+      summary: Lista pedidos
+      security:
+        - tenantAuth: []
+      responses:
+        '200':
+          description: Lista de pedidos
+    post:
+      summary: Cria pedido
+      security:
+        - tenantAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+      responses:
+        '201':
+          description: Criado
+  /api/v1/pix/charge:
+    post:
+      summary: Cria cobrança PIX
+      security:
+        - tenantAuth: []
+      responses:
+        '201':
+          description: Cobrança criada
+  /api/v1/pix/webhook:
+    post:
+      summary: Webhook de conciliação PIX
+      responses:
+        '200':
+          description: Processado
+  /api/v1/fiscal/invoices:
+    post:
+      summary: Emite documento fiscal
+      security:
+        - tenantAuth: []
+      responses:
+        '201':
+          description: Documento criado
+  /api/v1/stock/items:
+    get:
+      summary: Lista itens de estoque
+      security:
+        - tenantAuth: []
+      responses:
+        '200':
+          description: Lista de itens
+    post:
+      summary: Upsert item de estoque
+      security:
+        - tenantAuth: []
+      responses:
+        '201':
+          description: Item salvo
+  /api/v1/whatsapp/send:
+    post:
+      summary: Envia template WhatsApp
+      security:
+        - tenantAuth: []
+      responses:
+        '201':
+          description: Mensagem enviada
+  /api/v1/config/me:
+    get:
+      summary: Configuração atual do tenant
+      security:
+        - tenantAuth: []
+      responses:
+        '200':
+          description: Configuração retornada
+    put:
+      summary: Atualiza configuração do tenant
+      security:
+        - tenantAuth: []
+      responses:
+        '200':
+          description: Configuração atualizada
+components:
+  securitySchemes:
+    tenantAuth:
+      type: apiKey
+      in: header
+      name: x-tenant-id
+  schemas:
+    TransactionCreate:
+      type: object
+      required: [kind, description, amountInCents, dueDate]
+      properties:
+        kind:
+          type: string
+          enum: [income, expense]
+        description:
+          type: string
+        amountInCents:
+          type: integer
+        dueDate:
+          type: string
+          format: date-time
+    OrderCreate:
+      type: object
+      required: [customerId, totalInCents, items]
+      properties:
+        customerId:
+          type: string
+        totalInCents:
+          type: integer
+        items:
+          type: array
+          items:
+            type: object
+            required: [stockItemId, quantity, unitPriceInCents]
+            properties:
+              stockItemId:
+                type: string
+              quantity:
+                type: number
+              unitPriceInCents:
+                type: integer

@@ -1,0 +1,339 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  owner
+  admin
+  operador
+}
+
+enum TransactionKind {
+  income
+  expense
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PixStatus {
+  PENDING
+  PAID
+  EXPIRED
+  FAILED
+}
+
+enum FiscalKind {
+  NFE
+  NFSE
+  NFCE
+}
+
+enum FiscalStatus {
+  PENDING
+  AUTHORIZED
+  REJECTED
+  CANCELLED
+}
+
+enum MovementKind {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum NotificationChannel {
+  APP
+  WHATSAPP
+}
+
+model Tenant {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  legalName   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships Membership[]
+  settings    CompanySettings?
+
+  customers             Customer[]
+  financialTransactions FinancialTransaction[]
+  salesOrders           SalesOrder[]
+  salesOrderItems       SalesOrderItem[]
+  pixCharges            PixCharge[]
+  pixWebhookEvents      PixWebhookEvent[]
+  fiscalDocuments       FiscalDocument[]
+  stockItems            StockItem[]
+  inventoryMovements    InventoryMovement[]
+  whatsAppMessages      WhatsAppMessage[]
+  notifications         Notification[]
+  auditLogs             AuditLog[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships   Membership[]
+  notifications Notification[]
+  auditLogs     AuditLog[]
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  role      Role
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId])
+}
+
+model CompanySettings {
+  id                  String   @id @default(cuid())
+  tenantId            String   @unique
+  businessName        String
+  cnpj                String
+  phone               String?
+  city                String?
+  fiscalRegime        String?
+  onboardingCompleted Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  phone     String?
+  email     String?
+  document  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  transactions FinancialTransaction[]
+  orders       SalesOrder[]
+  pixCharges   PixCharge[]
+  fiscalDocs   FiscalDocument[]
+
+  @@index([tenantId, name])
+}
+
+model FinancialTransaction {
+  id            String          @id @default(cuid())
+  tenantId      String
+  customerId    String?
+  kind          TransactionKind
+  description   String
+  amountInCents Int
+  dueDate       DateTime
+  paidAt        DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, kind, dueDate])
+}
+
+model SalesOrder {
+  id           String      @id @default(cuid())
+  tenantId     String
+  customerId   String
+  status       OrderStatus @default(PENDING)
+  totalInCents Int
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer        @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items    SalesOrderItem[]
+
+  @@index([tenantId, status])
+}
+
+model SalesOrderItem {
+  id               String   @id @default(cuid())
+  tenantId         String
+  salesOrderId     String
+  stockItemId      String
+  quantity         Float
+  unitPriceInCents Int
+  createdAt        DateTime @default(now())
+
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  stockItem  StockItem @relation(fields: [stockItemId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, salesOrderId])
+}
+
+model PixCharge {
+  id           String    @id @default(cuid())
+  tenantId     String
+  customerId   String
+  status       PixStatus @default(PENDING)
+  externalId   String
+  amountInCents Int
+  description  String
+  qrCode       String?
+  qrCodeBase64 String?
+  expiresAt    DateTime?
+  paidAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  events   PixWebhookEvent[]
+
+  @@unique([tenantId, externalId])
+  @@index([tenantId, status])
+}
+
+model PixWebhookEvent {
+  id        String   @id @default(cuid())
+  tenantId  String
+  chargeId  String
+  eventType String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  charge PixCharge @relation(fields: [chargeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, chargeId])
+}
+
+model FiscalDocument {
+  id              String       @id @default(cuid())
+  tenantId        String
+  customerId      String
+  kind            FiscalKind
+  status          FiscalStatus @default(PENDING)
+  totalInCents    Int
+  cbsRate         Float
+  ibsRate         Float
+  legacyTaxRate   Float?
+  coexistenceYear Int
+  municipalityCode String
+  serviceCode     String?
+  externalNumber  String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, kind, status])
+}
+
+model StockItem {
+  id              String   @id @default(cuid())
+  tenantId        String
+  sku             String
+  name            String
+  quantity        Float
+  minimumQuantity Float    @default(0)
+  unitCostInCents Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant     Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orderItems SalesOrderItem[]
+  movements  InventoryMovement[]
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, quantity])
+}
+
+model InventoryMovement {
+  id          String       @id @default(cuid())
+  tenantId    String
+  stockItemId String
+  kind        MovementKind
+  quantity    Float
+  reason      String
+  createdAt   DateTime     @default(now())
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stockItem StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, stockItemId])
+}
+
+model WhatsAppMessage {
+  id                String        @id @default(cuid())
+  tenantId          String
+  to                String
+  templateName      String
+  providerMessageId String?
+  status            MessageStatus
+  createdAt         DateTime      @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status])
+}
+
+model Notification {
+  id        String              @id @default(cuid())
+  tenantId  String
+  userId    String?
+  title     String
+  body      String
+  channel   NotificationChannel
+  readAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String
+  action     String
+  resource   String
+  resourceId String?
+  metadata   Json
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, resource, createdAt])
+}
