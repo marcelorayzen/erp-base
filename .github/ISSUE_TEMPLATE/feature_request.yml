@@ -1,0 +1,56 @@
+name: "Feature request"
+description: "Sugestao de melhoria de produto ou funcionalidade."
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: input
+    id: objective
+    attributes:
+      label: Objetivo de negocio
+      description: Qual problema de negocio isso resolve?
+      placeholder: Reduzir tempo de cobranca manual
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta
+      description: Descreva a funcionalidade desejada.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Criterios de aceitacao
+      description: Como saber que esta pronto?
+      placeholder: |
+        - Dado ...
+        - Quando ...
+        - Entao ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridade
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+    validations:
+      required: true
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencias e riscos
+      description: APIs, migrations, compliance, terceiros.
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Contexto adicional

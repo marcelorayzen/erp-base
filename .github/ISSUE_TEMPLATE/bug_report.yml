@@ -1,0 +1,80 @@
+name: "Bug report"
+description: "Reporte um problema de comportamento, erro ou regressao."
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Preencha os campos abaixo para facilitar reproducao e triagem.
+
+  - type: input
+    id: summary
+    attributes:
+      label: Resumo
+      description: Descreva o problema em uma frase.
+      placeholder: Ex. Webhook PIX retorna 500 para payload valido
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Sequencia exata para reproduzir.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Resultado esperado
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Resultado atual
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Ambiente
+      description: local, homolog ou producao
+      placeholder: homolog
+    validations:
+      required: true
+
+  - type: input
+    id: tenant
+    attributes:
+      label: Tenant afetado
+      description: Identificador/slug do tenant
+      placeholder: demo
+    validations:
+      required: false
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidade
+      options:
+        - Sev1 (critico)
+        - Sev2 (alto)
+        - Sev3 (medio)
+        - Sev4 (baixo)
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidencias
+      description: Logs, screenshots, payloads e respostas.

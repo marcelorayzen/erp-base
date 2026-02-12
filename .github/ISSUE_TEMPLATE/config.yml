@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: PM/QA docs
+    url: https://github.com/marcelorayzen/erp-base/tree/main/docs/pm-qa
+    about: Consulte o pacote PM/QA antes de abrir novas demandas.

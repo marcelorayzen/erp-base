@@ -144,6 +144,11 @@ Contrato OpenAPI: `docs/openapi.yaml`
 4. Validar smoke em homologacao
 5. Conferir webhook PIX e segredos de producao
 
+## Contribuicao
+- Pull Requests usam template em `.github/pull_request_template.md`.
+- Issues usam templates em `.github/ISSUE_TEMPLATE/`.
+- CI automatica roda em `.github/workflows/ci.yml`.
+
 ## Documentacao de produto e QA
 - Guia PM/QA: `docs/pm-qa/README.md`
 - PRD: `docs/pm-qa/PRD.md`
